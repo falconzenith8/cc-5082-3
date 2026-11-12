@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>据点争夺 · 多阵营</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark"></span>
+        <div>
+          <h1>据点争夺</h1>
+          <p class="brand-sub">服务端权威占领规则 · 输入驱动</p>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <select id="match-select" aria-label="选择对局"></select>
+        <button id="new-match" type="button" class="ghost">新建对局</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="stage">
+        <div class="hud">
+          <div class="clock">
+            <span id="phase-label" class="phase">就绪</span>
+            <span id="clock-label" class="clock-label">05:00</span>
+          </div>
+          <div class="capture-bar" aria-label="占领进度">
+            <div class="bar-track">
+              <div id="bar-fill" class="bar-fill"></div>
+              <div id="bar-ticks" class="bar-ticks"></div>
+            </div>
+            <div class="bar-label">
+              <span id="owner-label">未占领</span>
+              <span id="momentum-label">空场</span>
+            </div>
+            <div class="bar-label">
+              <span id="challenger-label" class="mono">无挑战方</span>
+              <span id="weight-label" class="mono">有效权重 0</span>
+            </div>
+          </div>
+          <div id="scoreboard" class="scoreboard"></div>
+        </div>
+
+        <canvas id="map" width="900" height="900" aria-label="对局地图"></canvas>
+
+        <div id="controls" class="controls">
+          <div class="control-row">
+            <label for="player-select">操作角色</label>
+            <select id="player-select" aria-label="选择操作角色"></select>
+          </div>
+          <div class="control-row">
+            <label>加入阵营</label>
+            <div id="faction-buttons" class="role-buttons" aria-label="选择阵营"></div>
+            <button id="join" type="button" class="primary">加入</button>
+            <button id="switch-faction" type="button" class="ghost" title="把当前操作角色切换到所选阵营">换阵营</button>
+            <button id="start" type="button" class="ghost">开始</button>
+            <button id="end" type="button" class="ghost">结束</button>
+            <button id="add-unit" type="button" class="ghost" title="添加由你操控的演练单位">+ 演练单位</button>
+            <button id="leave" type="button" class="ghost" title="让当前操作角色离场">离场</button>
+          </div>
+          <p class="hint">在地图上点击移动，靠近敌人后点击敌方角色射击。移动与射击都会被服务端逐步解释。</p>
+          <div class="role-buttons" id="role-buttons" aria-label="选择角色"></div>
+        </div>
+
+        <div id="notice" class="notice" hidden></div>
+      </section>
+
+      <aside class="rail">
+        <section class="panel">
+          <h2>资格与参与</h2>
+          <div id="presence-list" class="presence-list"></div>
+          <div id="presence-empty" class="empty">据点内没有角色</div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>计分事件</h2>
+            <span id="event-count" class="badge">0</span>
+          </div>
+          <ul id="event-feed" class="event-feed"></ul>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>回放</h2>
+            <div>
+              <button id="load-replay" type="button" class="ghost small">载入</button>
+              <button id="exit-replay" type="button" class="ghost small">退出</button>
+            </div>
+          </div>
+          <div class="replay-controls">
+            <button id="replay-toggle" type="button" class="primary">播放</button>
+            <input id="replay-seek" type="range" min="0" max="1000" value="0" aria-label="回放进度" />
+            <span id="replay-time" class="mono">0.0s</span>
+          </div>
+          <div id="replay-note" class="replay-note">载入回放后可按事件时间轴定位。</div>
+        </section>
+
+        <section class="panel legend">
+          <h2>规则摘要</h2>
+          <ul>
+            <li>存活计入在场；被压制者仍算在场但占领权重归零。</li>
+            <li>支援角色无占领资格，只参与争夺计数。</li>
+            <li>空场：进度回落至最近的中性点，计分节点跳过。</li>
+            <li>单方：按角色权重推进；控制方独自在场时修复进度。</li>
+            <li>多方：领跑者需压过其余权重之和，仅净值推进。</li>
+            <li>换阵营：旧参与记录作废，按新身份重新判定。</li>
+            <li>达到胜利分后对局立即结束，拒绝旧计分回调。</li>
+          </ul>
+        </section>
+      </aside>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

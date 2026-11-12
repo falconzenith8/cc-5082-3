@@ -1,0 +1,14 @@
+{
+  "name": "capture-arena",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "多阵营据点争夺：服务端权威占领规则、输入驱动与事件回放",
+  "scripts": {
+    "start": "node src/server/index.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
