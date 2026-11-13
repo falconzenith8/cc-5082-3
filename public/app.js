@@ -36,7 +36,8 @@ const EVENT_TYPES = [
   'respawn',
   'captured',
   'score',
-  'hold_skipped'
+  'hold_skipped',
+  'room_closed'
 ];
 
 const state = {
@@ -219,6 +220,15 @@ function connectStream(id) {
   source.addEventListener('hello', (event) => {
     const payload = JSON.parse(event.data);
     if (payload.match) applySnapshot(payload.match);
+  });
+  source.addEventListener('room_closed', (event) => {
+    const payload = JSON.parse(event.data);
+    showNotice(`房间已被关闭（${payload.reason || '未知原因'}），实时流已断开`);
+    if (state.source) {
+      state.source.close();
+      state.source = null;
+    }
+    refreshMatches().catch(() => {});
   });
   source.addEventListener('state', (event) => {
     const payload = JSON.parse(event.data);

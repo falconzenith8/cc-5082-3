@@ -16,29 +16,45 @@ const MIME = {
   '.svg': 'image/svg+xml'
 };
 
-export function createServer({ now = () => Date.now(), tickMs = 50 } = {}) {
-  const manager = new MatchManager({ now });
+export function createServer({
+  now = () => Date.now(),
+  tickMs = 50,
+  maxRooms = 16,
+  instanceId = 'default',
+  logger = null
+} = {}) {
+  const manager = new MatchManager({ now, maxRooms });
   manager.startClock(tickMs);
+  const startedAtMs = now();
 
   const server = http.createServer(async (req, res) => {
+    const started = now();
+    res.on('finish', () => {
+      if (!logger) return;
+      logger.log('http', `${req.method} ${req.url}`, {
+        status: res.statusCode,
+        durationMs: Math.max(0, now() - started)
+      });
+    });
     try {
-      await route(req, res, manager, now);
+      await route(req, res, manager, now, { instanceId, startedAtMs });
     } catch (error) {
       respondError(res, error);
     }
   });
 
-  server.on('close', () => manager.stopClock());
   server.manager = manager;
+  server.shutdown = (reason) => manager.shutdown(reason);
+  server.on('close', () => manager.stopClock());
   return server;
 }
 
-async function route(req, res, manager, now) {
+async function route(req, res, manager, now, meta) {
   const url = new URL(req.url, 'http://localhost');
   const parts = url.pathname.split('/').filter(Boolean);
 
   if (parts[0] === 'api') {
-    return handleApi(req, res, url, parts.slice(1), manager, now);
+    return handleApi(req, res, url, parts.slice(1), manager, now, meta);
   }
 
   if (req.method === 'GET' || req.method === 'HEAD') {
@@ -48,10 +64,23 @@ async function route(req, res, manager, now) {
   return sendJson(res, 405, { error: '方法不允许' });
 }
 
-async function handleApi(req, res, url, parts, manager, now) {
+async function handleApi(req, res, url, parts, manager, now, meta) {
   if (parts.length === 0) {
     if (req.method !== 'GET') return sendJson(res, 405, { error: '方法不允许' });
     return sendJson(res, 200, { matches: manager.list() });
+  }
+
+  if (parts[0] === 'health' && parts.length === 1 && req.method === 'GET') {
+    return sendJson(res, 200, {
+      ok: true,
+      instanceId: meta.instanceId,
+      uptimeMs: Math.max(0, now() - meta.startedAtMs),
+      ...manager.stats()
+    });
+  }
+
+  if (parts[0] === 'stats' && parts.length === 1 && req.method === 'GET') {
+    return sendJson(res, 200, { instanceId: meta.instanceId, ...manager.stats() });
   }
 
   if (parts[0] === 'matches') {
@@ -72,8 +101,8 @@ async function handleApi(req, res, url, parts, manager, now) {
     if (sub === undefined) {
       if (req.method === 'GET') return sendJson(res, 200, { match: match.snapshot() });
       if (req.method === 'DELETE') {
-        manager.remove(match.id);
-        return sendJson(res, 200, { ok: true });
+        const summary = manager.closeRoom(match.id, 'api_delete');
+        return sendJson(res, 200, { ok: true, closed: summary });
       }
       return sendJson(res, 405, { error: '方法不允许' });
     }
@@ -86,7 +115,7 @@ async function handleApi(req, res, url, parts, manager, now) {
       const events = Number.isFinite(since)
         ? match.recorder.eventsSince(since)
         : match.recorder.events;
-      return sendJson(res, 200, { events });
+      return sendJson(res, 200, { events, capacity: match.recorder.stats() });
     }
     if (sub === 'replay' && req.method === 'GET') {
       return sendJson(res, 200, match.replayData());
@@ -144,14 +173,17 @@ function streamMatch(req, res, manager, match) {
     res.write(`data: ${JSON.stringify(event)}\n\n`);
   };
 
-  const sendInitial = () => {
-    res.write('event: hello\n');
-    res.write(`data: ${JSON.stringify({ match: match.snapshot(), lastEventId: 0 })}\n\n`);
-  };
-  sendInitial();
+  res.write('event: hello\n');
+  res.write(`data: ${JSON.stringify({ match: match.snapshot(), lastEventId: 0 })}\n\n`);
 
   const unsubscribe = manager.subscribe(match.id, (payload) => {
     if (res.writableEnded) return;
+    if (payload.closed) {
+      res.write('event: room_closed\n');
+      res.write(`data: ${JSON.stringify({ matchId: payload.matchId, reason: payload.reason })}\n\n`);
+      cleanup();
+      return;
+    }
     for (const event of payload.events) {
       write({ ...event, id: event.seq });
     }
@@ -240,15 +272,5 @@ function serveStatic(req, res, pathname) {
       'cache-control': 'no-cache'
     });
     res.end(req.method === 'HEAD' ? undefined : content);
-  });
-}
-
-const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
-if (isMain) {
-  const port = Number(process.env.PORT || 8080);
-  const host = process.env.HOST || '127.0.0.1';
-  const server = createServer();
-  server.listen(port, host, () => {
-    console.log(`据点争夺服务已启动：http://${host}:${port}`);
   });
 }

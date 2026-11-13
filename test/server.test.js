@@ -7,7 +7,7 @@ let base;
 
 before(async () => {
   let nowMs = 0;
-  server = createServer({ now: () => nowMs, tickMs: 0 });
+  server = createServer({ now: () => nowMs, tickMs: 0, maxRooms: 32 });
   server.manager.stopClock();
   server.clock = { advance: (ms) => (nowMs += ms), now: () => nowMs };
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));

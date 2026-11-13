@@ -1,0 +1,15 @@
+{
+  "name": "标准据点赛（5 分钟 · 200 分）",
+  "config": {
+    "captureRate": 20,
+    "decayRate": 8,
+    "contestedFactor": 0.6,
+    "captureBonus": 25,
+    "holdPointsPerSec": 3,
+    "scoreIntervalMs": 1000,
+    "scoreToWin": 200,
+    "durationMs": 300000,
+    "eventLimit": 4000,
+    "frameLimit": 2000
+  }
+}

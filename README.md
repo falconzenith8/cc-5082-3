@@ -5,11 +5,22 @@
 ## 运行
 
 ```bash
-npm start           # http://127.0.0.1:8080（可用 PORT / HOST 覆盖）
-npm test            # 引擎与 HTTP/SSE 接口测试
+npm start           # 单实例 http://127.0.0.1:8080（可用 PORT / HOST / STATE_DIR 覆盖）
+npm test            # 引擎与 HTTP/SSE 接口测试（29 项）
 ```
 
 零依赖，Node ≥ 20。打开页面后可新建多场对局，在同一页面切换；每场对局状态与事件流互相独立。
+
+### 本地多对局运行包（双隔离实例）
+
+```bash
+npm run instances:start   # 启动 alpha(:18081) 与 beta(:18082)，独立状态目录 run/<instance>
+npm run selftest          # 发布自检：双实例真实争夺、隔离性、故障注入、清理验证（11 项）
+npm run ui-check          # 界面操作链路：移动→争夺→占领→计分→失败反馈→房间关闭
+npm run instances:stop    # 有序关停，cleanup.json 证明房间/订阅/时钟全部结束
+```
+
+完整的重建步骤、可重复比赛 walkthrough、容量限制与故障诊断说明见 [`docs/deployment.md`](docs/deployment.md)。容器等价配置见 `Dockerfile` 与 `docker-compose.yml`。
 
 操作方式：
 
@@ -47,8 +58,10 @@ npm test            # 引擎与 HTTP/SSE 接口测试
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
-| GET/POST | `/api/matches` | 列出 / 新建对局 |
-| GET/DELETE | `/api/matches/:id` | 快照 / 销毁 |
+| GET | `/api/health` | 实例健康：ID、房间相位、缓冲/丢弃统计 |
+| GET | `/api/stats` | 房间数、上限、订阅数与事件/关键帧容量统计 |
+| GET/POST | `/api/matches` | 列出 / 新建对局（超 `maxRooms` 返回 409） |
+| GET/DELETE | `/api/matches/:id` | 快照 / 按固定次序关闭房间并返回终态摘要 |
 | GET | `/api/matches/:id/stream` | SSE：`hello`、增量事件、节流后的 `state` |
 | GET | `/api/matches/:id/events?since=` | 增量事件 |
 | GET | `/api/matches/:id/replay` | 元信息 + 事件 + 关键帧 |
@@ -62,6 +75,10 @@ npm test            # 引擎与 HTTP/SSE 接口测试
 
 ## 结构
 
-- `src/engine/`：`match.js` 状态机、`capture.js` 资格与动量、`presence.js` 参与记录、`events.js` 事件与关键帧。
-- `src/server/`：`manager.js` 多对局调度与增量订阅、`index.js` HTTP/SSE/静态资源。
-- `public/`：Canvas 地图、输入驱动、资格面板、事件流与回放播放器。
+- `src/engine/`：`match.js` 状态机、`capture.js` 资格与动量、`presence.js` 参与记录、`events.js` 事件与关键帧（含容量上限与丢弃统计）。
+- `src/server/`：`main.js` 进程入口、`runtime.js` 实例生命周期（PID 锁、日志轮转、关停报告）、`manager.js` 多对局调度、容量限制与有序清理、`index.js` HTTP/SSE/静态资源。
+- `public/`：Canvas 地图、输入驱动、资格面板、事件流与回放播放器；内核拒绝的操作以通知条反馈，房间关闭通过 SSE 提示。
+- `scripts/lib/bot.js`：仅走 HTTP 指令的模拟角色（可复现随机种子）。
+- `scripts/selftest/`：双实例发布自检与界面操作链路自检。
+- `deploy/`：双实例配置、示例房间模板、启动/停止脚本。
+- `docs/deployment.md`：部署、完整比赛流程与故障诊断。

@@ -1,0 +1,51 @@
+# 等价于 deploy/bin/start-instances.sh 的容器编排：两个实例端口、状态卷与配置完全隔离。
+services:
+  alpha:
+    build: .
+    image: capture-arena:local
+    environment:
+      INSTANCE_ID: alpha
+      HOST: 0.0.0.0
+      PORT: "18081"
+      MAX_ROOMS: "4"
+      LOG_MAX_BYTES: "262144"
+      LOG_KEEP: "2"
+      STATE_DIR: /var/lib/capture-arena
+    ports:
+      - "127.0.0.1:18081:18081"
+    volumes:
+      - alpha-state:/var/lib/capture-arena
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:18081/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 2s
+    stop_grace_period: 10s
+
+  beta:
+    build: .
+    image: capture-arena:local
+    environment:
+      INSTANCE_ID: beta
+      HOST: 0.0.0.0
+      PORT: "18082"
+      MAX_ROOMS: "4"
+      LOG_MAX_BYTES: "262144"
+      LOG_KEEP: "2"
+      STATE_DIR: /var/lib/capture-arena
+    ports:
+      - "127.0.0.1:18082:18082"
+    volumes:
+      - beta-state:/var/lib/capture-arena
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:18082/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 2s
+    stop_grace_period: 10s
+
+volumes:
+  alpha-state:
+  beta-state:

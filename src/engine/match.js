@@ -44,7 +44,7 @@ export class Match {
     this.scores = Object.fromEntries(FACTION_IDS.map((id) => [id, 0]));
     this.scoreBucket = 0;
 
-    this.recorder = new EventRecorder();
+    this.recorder = new EventRecorder(this.config.eventLimit, this.config.frameLimit);
     this.recentEvents = [];
     this.eventSeq = 1;
     this.lastMomentum = IDLE_MOMENTUM;
@@ -64,6 +64,7 @@ export class Match {
   // ---- 玩家生命周期 ----
 
   addPlayer({ faction, role = 'vanguard', name }, nowMs = Date.now()) {
+    if (this.phase === 'ended') throw new MatchError(409, '对局已结束，拒绝迟到加入', 'match_ended');
     if (!FACTION_IDS.includes(faction)) throw new MatchError(400, '无效阵营', 'invalid_faction');
     if (!ROLES[role]) throw new MatchError(400, '无效角色', 'invalid_role');
     if (this.entities.size >= this.config.maxPlayersTotal) {

@@ -1,12 +1,16 @@
 {
   "name": "capture-arena",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
-  "description": "多阵营据点争夺：服务端权威占领规则、输入驱动与事件回放",
+  "description": "多阵营据点争夺：服务端权威占领规则、多实例运行包与发布自检",
   "scripts": {
-    "start": "node src/server/index.js",
-    "test": "node --test test/*.test.js"
+    "start": "node src/server/main.js",
+    "test": "node --test test/*.test.js",
+    "selftest": "node scripts/selftest/run-selftest.js",
+    "ui-check": "node scripts/selftest/ui-control-check.js",
+    "instances:start": "bash deploy/bin/start-instances.sh",
+    "instances:stop": "bash deploy/bin/stop-instances.sh"
   },
   "engines": {
     "node": ">=20"

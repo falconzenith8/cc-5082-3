@@ -1,0 +1,10 @@
+{
+  "instanceId": "beta",
+  "host": "127.0.0.1",
+  "port": 18082,
+  "maxRooms": 4,
+  "tickMs": 50,
+  "logMaxBytes": 262144,
+  "logKeep": 2,
+  "stateDir": "run/beta"
+}

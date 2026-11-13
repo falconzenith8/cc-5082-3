@@ -1,0 +1,16 @@
+{
+  "name": "自检快局（60 秒 · 90 分）",
+  "config": {
+    "captureRate": 40,
+    "decayRate": 8,
+    "contestedFactor": 0.6,
+    "captureBonus": 25,
+    "holdPointsPerSec": 6,
+    "scoreIntervalMs": 1000,
+    "scoreToWin": 90,
+    "durationMs": 60000,
+    "respawnMs": 3000,
+    "eventLimit": 2000,
+    "frameLimit": 800
+  }
+}

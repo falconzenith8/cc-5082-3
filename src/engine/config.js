@@ -71,6 +71,8 @@ export const DEFAULT_CONFIG = {
   maxPlayersPerFaction: 6,
   maxPlayersTotal: 18,
   playerRadius: 13,
+  eventLimit: 4000,
+  frameLimit: 2000,
   obstacles: [
     { x: 250, y: 218, w: 96, h: 44 },
     { x: 554, y: 218, w: 96, h: 44 },

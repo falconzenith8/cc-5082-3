@@ -1,0 +1,10 @@
+{
+  "instanceId": "alpha",
+  "host": "127.0.0.1",
+  "port": 18081,
+  "maxRooms": 4,
+  "tickMs": 50,
+  "logMaxBytes": 262144,
+  "logKeep": 2,
+  "stateDir": "run/alpha"
+}
